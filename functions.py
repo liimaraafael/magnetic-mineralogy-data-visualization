@@ -1,28 +1,68 @@
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 
 
-def hysteresis_load(file):
-    f, m, af, am, nm = np.loadtxt(file, delimiter=',', skiprows=86, max_rows=2003, unpack=True)
-    nm = nm / max(nm)
-    am = am / max(am)
-    m = m / max(m)
-    return f, m, af, am, nm
+def trait_irm(file):
+    row_file = open("input-data/" + file, "r")
+
+    rowdata = row_file.readlines()
+    i = 0
+    treated = []
+
+    for line in rowdata:
+        i += 1
+        if i > 94:
+            if len(line.replace("\n", "").split(",")) == 3:
+                treated.append(line.replace("\n", "").split(","))
+
+            elif len(line.replace("\n", "").split(",")) == 1:
+                break
+
+    df = pd.DataFrame(treated, columns=["f", "m", "nm"])
+
+    df["f"] = df["f"].astype(float)
+    df["m"] = df["m"].astype(float)
+    df["nm"] = df["nm"].astype(float)
+
+    return df
 
 
-def irm_load(file):
-    f, m, nm = np.loadtxt(file, delimiter=',', skiprows=94, max_rows=101, unpack=True)
-    return f, m, nm
+def trait_his(file):
+    row_file = open("input-data/" + file, "r")
+
+    rowdata = row_file.readlines()
+    i = 0
+    treated = []
+
+    for line in rowdata:
+        i += 1
+        if i > 86:
+            if len(line.replace("\n", "").split(",")) == 5:
+                treated.append(line.replace("\n", "").split(","))
+
+    df = pd.DataFrame(treated, columns=["f", "m", "af", "am", "nm"])
+
+    df["f"] = df["f"].astype(float)
+    df["m"] = df["m"].astype(float)
+    df["af"] = df["af"].astype(float)
+    df["am"] = df["am"].astype(float)
+    df["nm"] = df["nm"].astype(float)
+
+    df["nm"] = df["nm"] / df["nm"].max()
+    df["am"] = df["am"] / df["am"].max()
+    df["m"] = df["m"] / df["m"].max()
+
+    return df
 
 
 def plot(his, irm, name):
-    f1, m1, af1, am1, nm1 = hysteresis_load("input-data/"+his)
-    f_irm, m_irm, nm_irm = irm_load("input-data/"+irm)
+    his_data = trait_his(his)
+    irm_data = trait_irm(irm)
 
     figure, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-    ax1.plot(af1, nm1, label='corrected', color='red')
-    ax1.plot(af1, m1, label='uncorrected', color='royalblue')
+    ax1.plot(his_data.af, his_data.nm, label='corrected', color='red')
+    ax1.plot(his_data.af, his_data.m, label='uncorrected', color='royalblue')
     ax1.legend(loc='best')
     ax1.set_xlabel(r'$B \ (T)$')
     ax1.set_ylabel(r'$M/M_{MAX}$')
@@ -33,8 +73,8 @@ def plot(his, irm, name):
     ax1.set_xlim(-1, 1)
     ax1.set_ylim(-1, 1)
 
-    ax2.scatter(f_irm, nm_irm, marker='o', color='r')
-    ax2.plot(f_irm, nm_irm, color='k')
+    ax2.scatter(irm_data.f, irm_data.nm, marker='o', color='r')
+    ax2.plot(irm_data.f, irm_data.nm, color='k')
     ax2.set_xlabel(r'$B \ (T)$')
     ax2.set_ylabel(r'$IRM \ (Am^{2}/kg)$')
 
